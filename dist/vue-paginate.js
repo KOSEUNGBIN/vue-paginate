@@ -1,6 +1,6 @@
 /**
- * vue-paginate v3.5.1
- * (c) 2017 Taha Shashtari
+ * vue-paginate v0.0.1
+ * (c) 2018 Taha Shashtari
  * @license MIT
  */
 (function (global, factory) {
@@ -6711,13 +6711,27 @@
       async: {
         type: Boolean,
         default: false
+      },
+      partition: {
+          type: Boolean,
+          default: false
+      },
+      chunkStepLinks: {
+        type: Object,
+        default: function () {
+            return {
+                prev: LEFT_ARROW,
+                next: RIGHT_ARROW
+            }
+        }
       }
     },
     data: function data () {
       return {
         listOfPages: [],
         numberOfPages: 0,
-        target: null
+        target: null,
+        startPage: 1
       }
     },
     computed: {
@@ -6763,6 +6777,13 @@
       },
       currentPage: function currentPage (toPage, fromPage) {
         this.$emit('change', toPage + 1, fromPage + 1)
+      },
+      startPage: function startPage(state) {
+        if (state > this.currentPage) {
+            this.$emit('next', state)
+        } else {
+            this.$emit('prev', state)
+        }
       }
     },
     methods: {
@@ -6783,11 +6804,13 @@
 
       if (!this.target && this.async) { return null }
 
-      var links = this.simple
-        ? getSimpleLinks(this, h)
-        : this.limit > 1
-        ? getLimitedLinks(this, h)
-        : getFullLinks(this, h)
+        var links = this.simple
+            ? getSimpleLinks(this, h)
+            : this.partition
+            ? getPartitionedLinks(this, h)
+            : this.limit > 1
+            ? getLimitedLinks(this, h)
+            : getFullLinks(this, h)
 
       if (this.hideSinglePage && this.numberOfPages <= 1) {
         return null
@@ -6905,6 +6928,56 @@
     var prevLink = h('li', prevListData, [h('a', prevData, vm.simple.prev)])
     var nextLink = h('li', nextListData, [h('a', nextData, vm.simple.next)])
     return [prevLink, nextLink]
+  }
+
+  function getPartitionedLinks (vm, h) {
+      var partitionedListOfPages = vm.listOfPages.map(function (it) { return it + vm.startPage; })
+      var pageLinks = partitionedListOfPages.map(function (link) {
+          var data = {
+              on: {
+                  click: function (e) {
+                      e.preventDefault()
+                      vm.currentPage = link - vm.startPage
+
+                  }
+              }
+          }
+
+          var liClass = ['number']
+          if (link === (vm.currentPage + vm.startPage)) {
+              liClass.push('active')
+          }
+
+          return h('li', {class: liClass}, [h('a', data, link)])
+      })
+
+      var prev = {
+          on: {
+              click: function (e) {
+                  e.preventDefault();
+                  var movedStartPage = (Math.floor((vm.startPage - 1) / vm.limit) - 1) * vm.limit
+                  vm.startPage = movedStartPage < 1 ?  1 : (movedStartPage + 1)
+                  vm.currentPage = vm.startPage <= 1 ? 0 : (Math.floor(vm.startPage / vm.limit) - 1)
+              }
+          }
+      }
+
+      var next = {}
+      if(partitionedListOfPages.length > 0) {
+          next = {
+            on: {
+                click: function (e) {
+                    e.preventDefault();
+                    vm.startPage = (Math.floor((vm.startPage - 1) / vm.limit) + 1) * vm.limit + 1
+                    vm.currentPage = Math.floor(vm.startPage / vm.limit) - 1
+                }
+            }
+        }
+      }
+
+      pageLinks.unshift(h('li', [h('a', prev, vm.chunkStepLinks.prev)]))
+      pageLinks.push(h('li', [h('a', next, vm.chunkStepLinks.next)]))
+      return pageLinks
   }
 
   function getTargetPaginateComponent (children, targetName) {

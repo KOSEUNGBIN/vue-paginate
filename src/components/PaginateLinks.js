@@ -46,13 +46,27 @@ export default {
     async: {
       type: Boolean,
       default: false
+    },
+    partition: {
+        type: Boolean,
+        default: false
+    },
+    chunkStepLinks: {
+      type: Object,
+      default: () => {
+          return {
+              prev: LEFT_ARROW,
+              next: RIGHT_ARROW
+          }
+      }
     }
   },
   data () {
     return {
       listOfPages: [],
       numberOfPages: 0,
-      target: null
+      target: null,
+      startPage: 1
     }
   },
   computed: {
@@ -96,6 +110,13 @@ export default {
     },
     currentPage (toPage, fromPage) {
       this.$emit('change', toPage + 1, fromPage + 1)
+    },
+    startPage(state) {
+      if (state > this.currentPage) {
+          this.$emit('next', state)
+      } else {
+          this.$emit('prev', state)
+      }
     }
   },
   methods: {
@@ -114,11 +135,13 @@ export default {
   render (h) {
     if (!this.target && this.async) return null
 
-    let links = this.simple
-      ? getSimpleLinks(this, h)
-      : this.limit > 1
-      ? getLimitedLinks(this, h)
-      : getFullLinks(this, h)
+      let links = this.simple
+          ? getSimpleLinks(this, h)
+          : this.partition
+          ? getPartitionedLinks(this, h)
+          : this.limit > 1
+          ? getLimitedLinks(this, h)
+          : getFullLinks(this, h)
 
     if (this.hideSinglePage && this.numberOfPages <= 1) {
       return null
@@ -236,6 +259,56 @@ function getSimpleLinks (vm, h) {
   const prevLink = h('li', prevListData, [h('a', prevData, vm.simple.prev)])
   const nextLink = h('li', nextListData, [h('a', nextData, vm.simple.next)])
   return [prevLink, nextLink]
+}
+
+function getPartitionedLinks (vm, h) {
+    const partitionedListOfPages = vm.listOfPages.map(it => it + vm.startPage)
+    let pageLinks = partitionedListOfPages.map(link => {
+        const data = {
+            on: {
+                click: (e) => {
+                    e.preventDefault()
+                    vm.currentPage = link - vm.startPage
+
+                }
+            }
+        }
+
+        let liClass = ['number']
+        if (link === (vm.currentPage + vm.startPage)) {
+            liClass.push('active')
+        }
+
+        return h('li', {class: liClass}, [h('a', data, link)])
+    })
+
+    const prev = {
+        on: {
+            click: (e) => {
+                e.preventDefault();
+                const movedStartPage = (Math.floor((vm.startPage - 1) / vm.limit) - 1) * vm.limit
+                vm.startPage = movedStartPage < 1 ?  1 : (movedStartPage + 1)
+                vm.currentPage = vm.startPage <= 1 ? 0 : (Math.floor(vm.startPage / vm.limit) - 1)
+            }
+        }
+    }
+
+    let next = {}
+    if(partitionedListOfPages.length > 0) {
+        next = {
+          on: {
+              click: (e) => {
+                  e.preventDefault();
+                  vm.startPage = (Math.floor((vm.startPage - 1) / vm.limit) + 1) * vm.limit + 1
+                  vm.currentPage = Math.floor(vm.startPage / vm.limit) - 1
+              }
+          }
+      }
+    }
+
+    pageLinks.unshift(h('li', [h('a', prev, vm.chunkStepLinks.prev)]))
+    pageLinks.push(h('li', [h('a', next, vm.chunkStepLinks.next)]))
+    return pageLinks
 }
 
 function getTargetPaginateComponent (children, targetName) {

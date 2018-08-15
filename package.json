@@ -1,7 +1,7 @@
 {
-  "name": "vue-paginate",
-  "version": "3.5.1",
-  "description": "A simple vue.js plugin to paginate data",
+  "name": "vue-paginate-series",
+  "version": "0.0.1",
+  "description": "A simple vue.js plugin to paginate data applied partitioned",
   "main": "dist/vue-paginate.js",
   "scripts": {
     "build": "rollup --environment NODE_ENV:production -c build/rollup.config.js && uglifyjs dist/vue-paginate.js -cm --comments -o dist/vue-paginate.min.js",
@@ -22,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/TahaSh/vue-paginate.git"
+    "url": "https://github.com/KOSEUNGBIN/vue-paginate.git"
   },
   "keywords": [
     "paginate",
@@ -78,6 +78,6 @@
     "webpack": "^1.14.0",
     "webpack-dev-server": "^1.16.2"
   },
-  "author": "Taha Shashtari",
+  "author": ["Taha Shashtari", "koseungbin"],
   "license": "MIT"
 }
