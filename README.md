@@ -165,6 +165,7 @@ To fix this issue we have to tell our `PaginateLinks` to wait for its companion 
 1. Full list of links. This is the default behavior, which displays all available page links from page 1 to N.
 2. Simple links. It contains only two links: *Previous* and *Next*.
 3. Limited links. It limits the number of displayed links, and provides left and right arrows to help you navigate between them.
+4. partitioned links. It add function of *Simple links*, that partition load data about *prev* and *next* link
 
 #### Full links
 
@@ -204,6 +205,25 @@ As in simple links, you can have next/previous links — which I call step links
 <paginate-links
   for="languages"
   :show-step-links="true"
+></paginate-links>
+```
+
+### Partitioned Links
+
+To activate this mode, you just need to specify the limit using the `limit`, `partiotion`, `chunkStepLinks` prop. `chunkStepLinks` moves on a chunk basis with the same concept as `stepLinks `.
+Example:
+
+``` html
+<paginate-links  
+    for="languages"
+    v-on:prev="prev" 
+    v-on:next="next" 
+    :partition="true" 
+    :limit="2"
+    :chunk-step-links="{
+        prev: 'Back'
+        ,next: 'Next'
+     }" 
 ></paginate-links>
 ```
 
